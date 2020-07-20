@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+option csharp_namespace = "GrpcRepGenServer";
+
+
+// The greeting service definition.
+service HealthChecker {
+  // Sends a greeting
+  rpc ReportHealth (HealthRequest) returns (HealthReply);
+}
+
+// The request message containing the user's name.
+message HealthRequest {
+  string name = 1;
+}
+
+// HealthReply Message Definitions
+message HealthReply {
+ string message = 1;
+  string timestamp = 2;
+  int32 num_errors = 3;
+}

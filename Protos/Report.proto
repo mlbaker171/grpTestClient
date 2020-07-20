@@ -1,0 +1,174 @@
+syntax = "proto3";
+
+option csharp_namespace = "GrpcRepGenServer";
+
+//FOR THE FOLLOWING, THE PACKAGE: <PackageReference Include="Google.Protobuf" Version="3.11.4" /> NEEDS TO BE ADDED
+//import "google/protobuf/duration.proto";						//THERE ARE MORE OF THESE TO INCLUDE IF NEEDED
+import "google/protobuf/timestamp.proto";
+//import "google/protobuf/wrappers.proto";
+
+
+//The reportmaker service definition.
+service ReportMaker {
+  
+  rpc ReportToolProcessHistory (ToolHistoryRequest) returns (ToolHistoryResponse);				//TOOL PROCESS HISTORY
+ // rpc ReportAlignmentHistory (AlignmentHistoryRequest) returns (AlignmentHistoryResponse);		//TOOL ALIGNMENT HISTORY
+}
+
+//////////////////////////////////////////////////////////////////////////
+// COMMON DEFINITIONS
+//////////////////////////////////////////////////////////////////////////
+enum SENSOR_RELATION {
+  UNUSED = 0;									//HAS TO START WITH ZERO
+  MASTER = 1;									
+  SLAVE = 2;			
+}
+
+//DEFINITION OF EVENT TYPES
+enum TOOL_EVENT_TYPE {
+  UNKNOWN = 0;									//HAS TO START WITH ZERO
+  CALIBRATION = 1;			
+  HEALTH_CHECK = 2;
+  INSPECTION = 3;
+}
+
+// Definition of "BASE" ToolEvent Message
+message toolEvents{
+ TOOL_EVENT_TYPE eventType = 1;
+ google.protobuf.Timestamp eventTime = 2;
+ string dataID = 3;								//unique ID string that the database throws in every entry (not our transaction ID)
+ string machineID = 4;
+ string eventName = 5;
+}
+
+//GENERIC 3 POINT COMPENSATION DATA
+message threePointMessage{
+ double x  = 1;
+ double y = 2;
+ double z = 3;
+}
+
+//BASIC PHI COMPENSATION - Has 12 of the compMessages in it.
+message phicompMessage{
+ repeated threePointMessage sensorComps = 1;
+ google.protobuf.Timestamp compensationTime = 2;
+}
+
+// Definition of  Sensor Offset Message
+message sensorOffsetMessage{
+ SENSOR_RELATION relation = 1;
+ string sensorID = 2;
+ google.protobuf.Timestamp eventTime = 3;
+ threePointMessage offset = 4;
+ threePointMessage phiCompError = 5;
+
+}
+
+// Definition of  Sensor Master Offset Message
+message sensorMasterOffsetMessage{
+ SENSOR_RELATION relation = 1;
+ string sensorID = 2;
+ google.protobuf.Timestamp eventTime = 3;
+ threePointMessage offset = 4;
+ threePointMessage phiCompError = 5;
+ threePointMessage tableOffsetError = 6;
+
+}
+
+// Definition of Sensor Health Check Message
+message sensorHealthCheckMessage{
+ SENSOR_RELATION relation = 1;
+ string sensorID = 2;
+ bool sensorOffsetPassed = 3; 
+ sensorMasterOffsetMessage sensorMaster = 4;
+ sensorOffsetMessage sensorSlave = 5;
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+// TOOL EVENT DEFINITIONS
+//////////////////////////////////////////////////////////////////////////
+// Definition of CalibrationEvent Message
+message calibrationEvent{
+ toolEvents eventBase = 1;
+ string dataStringType = 2;
+ double tableOffsetY = 3;
+ double tableOffsetZ = 4;
+ google.protobuf.Timestamp tableOffsetTime = 5;
+ double absRefX = 6;
+ double absRefY = 7;
+ double absRefZ = 8;
+ repeated sensorOffsetMessage sensordata = 9;
+}
+
+// DEFINITION OF THE HEALTHCHECK EVENT
+message healthCheckEvent{
+ toolEvents eventBase = 1;
+ string dataStringType = 2;
+ double tableOffsetY = 3;
+ double tableOffsetZ = 4;
+ google.protobuf.Timestamp tableOffsetTime = 5;
+ double absRefX = 6;
+ double absRefY = 7;
+ double absRefZ = 8;
+ repeated sensorOffsetMessage sensordata = 9;
+}
+
+
+// Definition of AlignmentEvent Message
+message alignmentEvent{
+ toolEvents eventBase = 1;
+ string partnumber = 2;
+ string runnumber = 3;
+ double x = 4;
+ double y = 5;
+ double z = 6;
+ double xx = 7;
+ double yy = 8;
+ double zz = 9;
+}
+
+// Definition of inspectionEvent Message
+message inspectionEvent{
+ toolEvents eventBase = 1;
+ string partnumber = 2;
+ string runnumber = 3;
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+// TOOL HISTORY DEFINITIONS
+//////////////////////////////////////////////////////////////////////////
+//The ToolHistoryRequest message definition
+message ToolHistoryRequest {
+  string toolID = 1;
+  google.protobuf.Timestamp timeStart = 2;		
+  google.protobuf.Timestamp timeEnd = 3;
+}
+
+
+// The response message containing the tool history.
+message ToolHistoryResponse {
+  string message = 1;
+  google.protobuf.Timestamp timeStart = 2;
+  google.protobuf.Timestamp timeEnd = 3;
+  repeated toolEvents toolEvents = 4;
+}
+
+//////////////////////////////////////////////////////////////////////////
+// ALIGNMENT HISTORY DEFINITIONS
+//////////////////////////////////////////////////////////////////////////
+//The AlignmentHistoryRequest message definition
+message AlignmentHistoryRequest {
+  string toolID = 1;
+  google.protobuf.Timestamp timeStart = 2;		
+  google.protobuf.Timestamp timeEnd = 3;
+}
+
+// The response message containing the tool alignment numbers.
+message AlignmentHistoryResponse {
+  string message = 1;
+  google.protobuf.Timestamp timeStart = 2;
+  google.protobuf.Timestamp timeEnd = 3;
+  repeated toolEvents toolEvents = 4;
+}
